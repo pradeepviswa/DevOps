@@ -1,4 +1,4 @@
-syllabus_md_content = """# PROFESSIONAL CERTIFICATE PROGRAM IN CLOUD COMPUTING AND DEVOPS
+# PROFESSIONAL CERTIFICATE PROGRAM IN CLOUD COMPUTING AND DEVOPS
 *AWS & DevOps Core Curriculum*
 
 ---
@@ -20,6 +20,7 @@ Designed for engineers, architects, and IT professionals, this program provides 
 ---
 
 ## Targeted Course Syllabus
+```
 [ Module 1: AWS Solutions Architect ]
 │
 ▼
@@ -40,7 +41,7 @@ Designed for engineers, architects, and IT professionals, this program provides 
 ▼
 [ Module 7: Native DevOps on AWS ]
 
-
+```
 
 
 
