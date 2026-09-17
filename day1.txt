@@ -1,0 +1,2 @@
+login to AWS portal
+create one virtual machine
