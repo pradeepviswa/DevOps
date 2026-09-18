@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShopSphere - E-Commerce Load Balancer Demo</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#eaeded;color:#111}
+a{text-decoration:none;color:inherit}.top{background:#131921;color:#fff;padding:7px 18px;font-size:13px}
+.server{background:#232f3e;color:#fff;text-align:center;padding:8px;font-weight:bold;font-size:14px}
+.server span{color:#ffd814}.nav{background:#131921;color:white;display:flex;align-items:center;gap:15px;padding:10px 18px;flex-wrap:wrap}
+.logo{font-size:25px;font-weight:bold;white-space:nowrap}.logo span{color:#ff9900}
+.search{display:flex;flex:1;min-width:280px;height:40px}.search select{width:75px;border:0;background:#eee}.search input{flex:1;border:0;padding:10px;font-size:15px}.search button{width:55px;border:0;background:#febd69;font-size:20px}
+.navitem{font-size:13px;white-space:nowrap}.navitem b{display:block;font-size:15px}.cart{font-size:17px;font-weight:bold}
+.menu{background:#232f3e;color:#fff;padding:10px 18px;display:flex;gap:22px;font-size:14px;overflow:auto}
+.hero{margin:14px auto;max-width:1450px;background:linear-gradient(110deg,#dff4ff,#fff);padding:30px;text-align:center;border-radius:5px}
+.hero h1{margin:5px;font-size:32px}.hero p{font-size:18px}.btn{background:#ffd814;border:1px solid #f0b800;border-radius:5px;padding:10px 18px;cursor:pointer;font-weight:bold}.btn:hover{background:#f7ca00}
+.container{max-width:1450px;margin:auto;padding:0 14px}.toolbar{background:white;padding:15px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.categories button{border:1px solid #aaa;background:#fff;padding:7px 12px;margin:3px;border-radius:4px;cursor:pointer}.categories button.active{background:#232f3e;color:#fff}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+.card{background:#fff;padding:15px;border-radius:4px;position:relative;min-height:390px;display:flex;flex-direction:column}.card img{width:100%;height:180px;object-fit:contain;background:#f8f8f8}.badge{position:absolute;top:12px;left:12px;background:#cc0c39;color:#fff;padding:5px 7px;font-size:11px;border-radius:3px}
+.title{font-weight:bold;margin:10px 0 5px}.rating{color:#e47911}.price{font-size:23px;font-weight:bold;margin:7px 0}.old{text-decoration:line-through;color:#777;font-size:13px}.card .btn{margin-top:auto}
+.panel{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10}.modal{background:white;width:min(850px,94%);max-height:90vh;overflow:auto;margin:5vh auto;padding:22px;border-radius:8px}.close{float:right;font-size:26px;cursor:pointer}.cartrow{display:grid;grid-template-columns:70px 1fr 100px 70px;gap:12px;align-items:center;border-bottom:1px solid #ddd;padding:12px 0}.cartrow img{width:65px;height:65px;object-fit:contain}.qty{width:55px;padding:6px}.summary{background:#f3f3f3;padding:15px;margin-top:15px}.form input,.form textarea,.form select{width:100%;padding:10px;margin:6px 0 12px;border:1px solid #aaa;border-radius:4px}
+footer{margin-top:25px;background:#131921;color:#ddd;padding:30px;text-align:center}.order{background:#fff;padding:15px;margin:10px 0;border-left:5px solid #067d62}
+@media(max-width:650px){.nav{padding:8px}.cartrow{grid-template-columns:55px 1fr}.cartrow .price,.cartrow .remove{grid-column:2}.hero h1{font-size:24px}}
+</style>
+</head>
+<body>
+
+<div class="top">Delivering to Demo Location &nbsp; | &nbsp; Today's Deals &nbsp; | &nbsp; Customer Service</div>
+<div class="server">LOAD BALANCER DEMO — Server IP: <span id="serverIp">Detecting...</span></div>
+
+<div class="nav">
+  <div class="logo">Shop<span>Sphere</span></div>
+  <div class="search">
+    <select id="searchCategory"><option>All</option><option>Electronics</option><option>Computers</option><option>Home</option><option>Fashion</option></select>
+    <input id="searchBox" placeholder="Search products, brands and categories">
+    <button onclick="searchProducts()">🔍</button>
+  </div>
+  <div class="navitem">Hello, Sign in<b>Account & Lists</b></div>
+  <div class="navitem" onclick="showOrders()" style="cursor:pointer">Returns<b>& Orders</b></div>
+  <div class="cart" onclick="showCart()" style="cursor:pointer">🛒 Cart (<span id="cartCount">0</span>)</div>
+</div>
+
+<div class="menu">
+  <b>☰ All</b><span>Best Sellers</span><span>New Releases</span><span>Today's Deals</span><span>Electronics</span><span>Computers</span><span>Home</span><span>Fashion</span><span>Customer Service</span>
+</div>
+
+<section class="hero">
+  <h1>Big Savings. Everyday Shopping.</h1>
+  <p>Demo e-commerce site for Apache / AWS Load Balancer testing</p>
+  <button class="btn" onclick="document.getElementById('products').scrollIntoView()">Shop Now</button>
+</section>
+
+<div class="container">
+  <div class="toolbar">
+    <div><b>Explore Products</b> <span id="resultCount"></span></div>
+    <div>
+      Sort:
+      <select onchange="sortProducts(this.value)">
+        <option value="default">Featured</option><option value="low">Price: Low to High</option>
+        <option value="high">Price: High to Low</option><option value="rating">Customer Rating</option>
+      </select>
+    </div>
+  </div>
+  <div class="categories">
+    <button class="active" onclick="filterCategory('All',this)">All</button>
+    <button onclick="filterCategory('Electronics',this)">Electronics</button>
+    <button onclick="filterCategory('Computers',this)">Computers</button>
+    <button onclick="filterCategory('Home',this)">Home</button>
+    <button onclick="filterCategory('Fashion',this)">Fashion</button>
+  </div>
+  <div id="products" class="grid"></div>
+</div>
+
+<!-- Cart -->
+<div id="cartPanel" class="panel"><div class="modal">
+  <span class="close" onclick="closePanel('cartPanel')">×</span><h2>Shopping Cart</h2>
+  <div id="cartItems"></div><div id="cartSummary"></div>
+</div></div>
+
+<!-- Checkout -->
+<div id="checkoutPanel" class="panel"><div class="modal">
+  <span class="close" onclick="closePanel('checkoutPanel')">×</span><h2>Checkout</h2>
+  <div class="form">
+    <h3>1. Delivery Address</h3>
+    <input id="name" placeholder="Full name"><input id="address" placeholder="Address">
+    <input id="city" placeholder="City"><input id="pincode" placeholder="PIN / ZIP Code">
+    <h3>2. Payment Method</h3>
+    <select id="payment"><option>Cash on Delivery</option><option>Credit / Debit Card (Demo)</option><option>UPI (Demo)</option><option>Net Banking (Demo)</option></select>
+    <h3>3. Order Summary</h3><div id="checkoutSummary"></div>
+    <button class="btn" onclick="placeOrder()">Place Your Order</button>
+  </div>
+</div></div>
+
+<!-- Orders -->
+<div id="ordersPanel" class="panel"><div class="modal">
+  <span class="close" onclick="closePanel('ordersPanel')">×</span><h2>Your Orders</h2>
+  <div id="orders"></div>
+</div></div>
+
+<footer>
+  <b>ShopSphere E-Commerce Demo</b><br><br>
+  Built for AWS / Apache / Load Balancer practice. No real payments are processed.
+</footer>
+
+<script>
+const products=[
+{id:1,name:"Wireless Bluetooth Headphones",cat:"Electronics",price:2499,old:3999,rating:4.4,img:"https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=500&q=80"},
+{id:2,name:"Smart Watch Series X",cat:"Electronics",price:3299,old:5999,rating:4.2,img:"https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=500&q=80"},
+{id:3,name:"Mechanical Gaming Keyboard",cat:"Computers",price:2899,old:4499,rating:4.6,img:"https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=500&q=80"},
+{id:4,name:"Wireless Gaming Mouse",cat:"Computers",price:1299,old:1999,rating:4.5,img:"https://images.unsplash.com/photo-1527814050087-3793815479db?auto=format&fit=crop&w=500&q=80"},
+{id:5,name:"Laptop Backpack 25L",cat:"Fashion",price:999,old:1599,rating:4.3,img:"https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=500&q=80"},
+{id:6,name:"Running Shoes",cat:"Fashion",price:1899,old:2999,rating:4.1,img:"https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=500&q=80"},
+{id:7,name:"Coffee Maker",cat:"Home",price:2199,old:3499,rating:4.0,img:"https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?auto=format&fit=crop&w=500&q=80"},
+{id:8,name:"LED Desk Lamp",cat:"Home",price:799,old:1299,rating:4.5,img:"https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=500&q=80"},
+{id:9,name:"Portable Bluetooth Speaker",cat:"Electronics",price:1599,old:2499,rating:4.4,img:"https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?auto=format&fit=crop&w=500&q=80"},
+{id:10,name:"USB-C Fast Charger",cat:"Computers",price:699,old:999,rating:4.6,img:"https://images.unsplash.com/photo-1591290619762-c588b9d9b0a4?auto=format&fit=crop&w=500&q=80"},
+{id:11,name:"Cotton Casual T-Shirt",cat:"Fashion",price:599,old:999,rating:4.0,img:"https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=500&q=80"},
+{id:12,name:"Non-Stick Cookware Set",cat:"Home",price:2499,old:3999,rating:4.3,img:"https://images.unsplash.com/photo-1584990347449-ae8d8d3c5d1f?auto=format&fit=crop&w=500&q=80"}
+];
+
+let visible=[...products], cart=JSON.parse(localStorage.getItem("cart")||"[]"), orders=JSON.parse(localStorage.getItem("orders")||"[]");
+
+function render(){
+ document.getElementById("resultCount").textContent=`(${visible.length} products)`;
+ document.getElementById("products").innerHTML=visible.map(p=>`
+ <div class="card"><span class="badge">DEAL</span><img src="${p.img}" alt="${p.name}">
+ <div class="title">${p.name}</div><div class="rating">★★★★☆ ${p.rating}</div>
+ <div><span class="price">₹${p.price.toLocaleString("en-IN")}</span> <span class="old">₹${p.old.toLocaleString("en-IN")}</span></div>
+ <small>FREE delivery • In stock</small><button class="btn" onclick="addCart(${p.id})">Add to Cart</button></div>`).join("");
+ updateCount();
+}
+function addCart(id){let x=cart.find(i=>i.id===id);x?x.qty++:cart.push({id,qty:1});save();alert("Added to cart");}
+function save(){localStorage.setItem("cart",JSON.stringify(cart));localStorage.setItem("orders",JSON.stringify(orders));updateCount();}
+function updateCount(){document.getElementById("cartCount").textContent=cart.reduce((s,i)=>s+i.qty,0)}
+function cartTotal(){return cart.reduce((s,i)=>{let p=products.find(x=>x.id===i.id);return s+p.price*i.qty},0)}
+function showCart(){
+ document.getElementById("cartItems").innerHTML=cart.length?cart.map(i=>{let p=products.find(x=>x.id===i.id);return `<div class="cartrow"><img src="${p.img}"><div><b>${p.name}</b><br>In stock<br><button onclick="removeItem(${p.id})">Remove</button></div><div>Qty <input class="qty" type="number" min="1" value="${i.qty}" onchange="changeQty(${p.id},this.value)"></div><b>₹${(p.price*i.qty).toLocaleString("en-IN")}</b></div>`}).join(""):"<p>Your cart is empty.</p>";
+ document.getElementById("cartSummary").innerHTML=cart.length?`<div class="summary"><h3>Subtotal: ₹${cartTotal().toLocaleString("en-IN")}</h3><p>FREE delivery eligible</p><button class="btn" onclick="checkout()">Proceed to Buy</button></div>`:"";
+ document.getElementById("cartPanel").style.display="block";
+}
+function removeItem(id){cart=cart.filter(i=>i.id!==id);save();showCart()}
+function changeQty(id,q){let x=cart.find(i=>i.id===id);if(x)x.qty=Math.max(1,+q);save();showCart()}
+function checkout(){if(!cart.length)return;closePanel("cartPanel");document.getElementById("checkoutSummary").innerHTML=`<h3>Total: ₹${cartTotal().toLocaleString("en-IN")}</h3><p>${cart.reduce((s,i)=>s+i.qty,0)} item(s)</p>`;document.getElementById("checkoutPanel").style.display="block"}
+function placeOrder(){
+ if(!document.getElementById("name").value||!document.getElementById("address").value||!document.getElementById("pincode").value){alert("Please enter delivery details.");return}
+ let order={id:"ORD"+Date.now(),date:new Date().toLocaleString(),total:cartTotal(),items:cart.reduce((s,i)=>s+i.qty,0),status:"Order Placed"};
+ orders.unshift(order);cart=[];save();closePanel("checkoutPanel");alert("Order placed successfully: "+order.id);showOrders();
+}
+function showOrders(){document.getElementById("orders").innerHTML=orders.length?orders.map(o=>`<div class="order"><b>Order #${o.id}</b><br>${o.date}<br>${o.items} item(s) • ₹${o.total.toLocaleString("en-IN")}<br>Status: <b>${o.status}</b></div>`).join(""):"<p>You have no orders.</p>";document.getElementById("ordersPanel").style.display="block"}
+function closePanel(id){document.getElementById(id).style.display="none"}
+function filterCategory(cat,btn){document.querySelectorAll(".categories button").forEach(b=>b.classList.remove("active"));btn.classList.add("active");visible=cat==="All"?[...products]:products.filter(p=>p.cat===cat);render()}
+function searchProducts(){let q=document.getElementById("searchBox").value.toLowerCase().trim();visible=products.filter(p=>(p.name+" "+p.cat).toLowerCase().includes(q));render()}
+function sortProducts(v){visible.sort((a,b)=>v==="low"?a.price-b.price:v==="high"?b.price-a.price:v==="rating"?b.rating-a.rating:a.id-b.id);render()}
+document.getElementById("searchBox").addEventListener("keydown",e=>{if(e.key==="Enter")searchProducts()});
+async function detectServer(){
+ // For a real load-balancer lab, create /server-info endpoint that returns the backend's private IP.
+ try{let r=await fetch("/server-info");let d=await r.json();if(d.server_ip)document.getElementById("serverIp").textContent=d.server_ip;else throw 0}
+ catch(e){document.getElementById("serverIp").textContent="Backend IP endpoint not configured (demo)";}
+}
+render();detectServer();
+</script>
+</body>
+</html>
